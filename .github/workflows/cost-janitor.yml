@@ -14,29 +14,41 @@ jobs:
           - 4566:4566
 
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.10"
 
-      - name: Install Terraform
-        uses: hashicorp/setup-terraform@v3
-
-      - name: Install Dependencies
+      - name: Terraform Init
         run: |
-          pip install terraform-local
-          pip install -r janitor/requirements.txt
+          cd terraform
+          terraform init
 
       - name: Terraform Apply
         run: |
           cd terraform
-          tflocal init
-          tflocal apply -auto-approve
+          terraform apply -auto-approve
 
-      - name: Run Janitor
+      - name: Install Python Dependencies
         run: |
           cd janitor
-          python janitor.py
+          pip install -r requirements.txt
+
+      - name: Run Cost Janitor
+        run: |
+          cd janitor
+          python3 janitor.py
+
+      - name: Upload Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: janitor-reports
+          path: |
+            janitor/report.json
+            janitor/summary.md
